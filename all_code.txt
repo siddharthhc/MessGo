@@ -1,0 +1,2771 @@
+=================== pubspec.yaml ===================
+name: messgo
+description: "A new Flutter project."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+# The following defines the version and build number for your application.
+# A version number is three numbers separated by dots, like 1.2.43
+# followed by an optional build number separated by a +.
+# Both the version and the builder number may be overridden in flutter
+# build by specifying --build-name and --build-number, respectively.
+# In Android, build-name is used as versionName while build-number used as versionCode.
+# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
+# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
+# Read more about iOS versioning at
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+# In Windows, build-name is used as the major, minor, and patch parts
+# of the product and file versions while build-number is used as the build suffix.
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.2
+
+# Dependencies specify other packages that your package needs in order to work.
+# To automatically upgrade your package dependencies to the latest versions
+# consider running `flutter pub upgrade --major-versions`. Alternatively,
+# dependencies can be manually updated by changing the version numbers below to
+# the latest version available on pub.dev. To see which dependencies have newer
+# versions available, run `flutter pub outdated`.
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^1.0.8
+  firebase_core: ^4.15.0
+  firebase_auth: ^6.7.0
+  cloud_firestore: ^6.10.0
+  google_maps_flutter: ^2.18.2
+  geolocator: ^14.1.1
+  geocoding: ^5.0.0
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.4.2
+  flutter_riverpod: ^3.4.3
+  dio: ^5.11.1
+  shared_preferences: ^2.5.5
+  image_picker: ^1.2.3
+  flutter_rating_bar: ^4.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # The "flutter_lints" package below contains a set of recommended lints to
+  # encourage good coding practices. The lint set provided by the package is
+  # activated in the `analysis_options.yaml` file located at the root of your
+  # package. See that file for information about deactivating specific lint
+  # rules and activating additional ones.
+  flutter_lints: ^6.0.0
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter packages.
+flutter:
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+
+  # To add assets to your application, add an assets section, like this:
+  # assets:
+  #   - images/a_dot_burr.jpeg
+  #   - images/a_dot_ham.jpeg
+
+  # An image asset can refer to one or more resolution-specific "variants", see
+  # https://flutter.dev/to/resolution-aware-images
+
+  # For details regarding adding assets from package dependencies, see
+  # https://flutter.dev/to/asset-from-package
+
+  # To add custom fonts to your application, add a fonts section here,
+  # in this "flutter" section. Each entry in this list should have a
+  # "family" key with the font family name, and a "fonts" key with a
+  # list giving the asset and other descriptors for the font. For
+  # example:
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # For details regarding fonts from package dependencies,
+  # see https://flutter.dev/to/font-from-package
+
+=================== lib/core/constants/app_constants.dart ===================
+
+=================== lib/core/services/bookmark_service.dart ===================
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class BookmarkService {
+  static const String _key = 'bookmarked_messes';
+  
+  static Future<List<String>> getBookmarks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? data = prefs.getString(_key);
+    if (data == null) return [];
+    return List<String>.from(jsonDecode(data));
+  }
+  
+  static Future<void> toggleBookmark(String messId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final bookmarks = await getBookmarks();
+    
+    if (bookmarks.contains(messId)) {
+      bookmarks.remove(messId);
+    } else {
+      bookmarks.add(messId);
+    }
+    
+    await prefs.setString(_key, jsonEncode(bookmarks));
+  }
+  
+  static Future<bool> isBookmarked(String messId) async {
+    final bookmarks = await getBookmarks();
+    return bookmarks.contains(messId);
+  }
+}
+
+=================== lib/core/theme/app_theme.dart ===================
+import 'package:flutter/material.dart';
+
+class AppTheme {
+  static const Color background = Color(0xFF0A0A0A);
+  static const Color surface = Color(0xFF141414);
+  static const Color surfaceLight = Color(0xFF1E1E1E);
+  static const Color cyan = Color(0xFF00D4FF);
+  static const Color blue = Color(0xFF2979FF);
+  static const Color purple = Color(0xFF7C4DFF);
+  static const Color pink = Color(0xFFE040FB);
+  static const Color textPrimary = Colors.white;
+  static const Color textSecondary = Color(0xFF9E9E9E);
+  static const Color error = Color(0xFFFF5252);
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: background,
+      colorScheme: const ColorScheme.dark(
+        primary: cyan,
+        secondary: purple,
+        surface: surface,
+        background: background,
+        error: error,
+        onPrimary: Colors.black,
+        onSecondary: Colors.white,
+        onSurface: textPrimary,
+        onBackground: textPrimary,
+      ),
+      textTheme: const TextTheme(
+        headlineLarge: TextStyle(
+          fontSize: 32,
+          fontWeight: FontWeight.bold,
+          color: textPrimary,
+          letterSpacing: -0.5,
+        ),
+        headlineMedium: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: textPrimary,
+        ),
+        titleLarge: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: textPrimary,
+        ),
+        bodyLarge: TextStyle(
+          fontSize: 16,
+          color: textPrimary,
+        ),
+        bodyMedium: TextStyle(
+          fontSize: 14,
+          color: textSecondary,
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: cyan,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: cyan,
+          side: const BorderSide(color: cyan, width: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: surface,
+        elevation: 8,
+        shadowColor: const Color(0x1400D4FF),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+          side: BorderSide(
+            color: Color(0x1A00D4FF),
+            width: 1,
+          ),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: surfaceLight,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: const Color(0xFF00D4FF).withOpacity(0.2)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: cyan, width: 2),
+        ),
+        prefixIconColor: textSecondary,
+        hintStyle: const TextStyle(color: textSecondary),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: background,
+        elevation: 0,
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: textPrimary,
+        ),
+      ),
+    );
+  }
+}
+
+=================== lib/core/widgets/filter_bottom_sheet.dart ===================
+import 'package:flutter/material.dart';
+
+class FilterBottomSheet extends StatefulWidget {
+  final Function(Map<String, dynamic>) onApply;
+  final Map<String, dynamic> currentFilters;
+
+  const FilterBottomSheet({
+    super.key,
+    required this.onApply,
+    required this.currentFilters,
+  });
+
+  @override
+  State<FilterBottomSheet> createState() => _FilterBottomSheetState();
+}
+
+class _FilterBottomSheetState extends State<FilterBottomSheet> {
+  late double _maxPrice;
+  late double _minRating;
+  late bool _vegOnly;
+  late bool _openNow;
+
+  @override
+  void initState() {
+    super.initState();
+    _maxPrice = widget.currentFilters['maxPrice'] ?? 5000;
+    _minRating = widget.currentFilters['minRating'] ?? 0;
+    _vegOnly = widget.currentFilters['vegOnly'] ?? false;
+    _openNow = widget.currentFilters['openNow'] ?? false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF141414),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Filters',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _maxPrice = 5000;
+                          _minRating = 0;
+                          _vegOnly = false;
+                          _openNow = false;
+                        });
+                      },
+                      child: const Text(
+                        'Reset',
+                        style: TextStyle(color: Color(0xFF00D4FF)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                
+                Text(
+                  'Max Price: ?${_maxPrice.toInt()}',
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                Slider(
+                  value: _maxPrice,
+                  min: 1000,
+                  max: 5000,
+                  divisions: 8,
+                  activeColor: const Color(0xFF00D4FF),
+                  inactiveColor: Colors.white.withOpacity(0.1),
+                  onChanged: (v) => setState(() => _maxPrice = v),
+                ),
+                
+                const SizedBox(height: 16),
+                
+                Text(
+                  'Min Rating: ${_minRating.toStringAsFixed(1)}+',
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                Slider(
+                  value: _minRating,
+                  min: 0,
+                  max: 5,
+                  divisions: 10,
+                  activeColor: const Color(0xFF00D4FF),
+                  inactiveColor: Colors.white.withOpacity(0.1),
+                  onChanged: (v) => setState(() => _minRating = v),
+                ),
+                
+                const SizedBox(height: 16),
+                
+                _buildToggle('Veg Only', _vegOnly, (v) => setState(() => _vegOnly = v)),
+                _buildToggle('Open Now', _openNow, (v) => setState(() => _openNow = v)),
+                
+                const SizedBox(height: 32),
+                
+                SizedBox(
+                  width: double.infinity,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF00D4FF), Color(0xFF2979FF)],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          widget.onApply({
+                            'maxPrice': _maxPrice,
+                            'minRating': _minRating,
+                            'vegOnly': _vegOnly,
+                            'openNow': _openNow,
+                          });
+                          Navigator.pop(context);
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Text(
+                            'Apply Filters',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggle(String label, bool value, Function(bool) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: const Color(0xFF00D4FF),
+            activeTrackColor: const Color(0xFF00D4FF).withOpacity(0.3),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+=================== lib/core/widgets/filter_sheet.dart ===================
+import 'package:flutter/material.dart';
+
+class FilterBottomSheet extends StatefulWidget {
+  final Function(Map<String, dynamic>) onApply;
+  final Map<String, dynamic> currentFilters;
+
+  const FilterBottomSheet({
+    super.key,
+    required this.onApply,
+    required this.currentFilters,
+  });
+
+  @override
+  State<FilterBottomSheet> createState() => _FilterBottomSheetState();
+}
+
+class _FilterBottomSheetState extends State<FilterBottomSheet> {
+  double _maxPrice = 3000;
+  double _minRating = 0;
+  bool _vegOnly = false;
+  bool _openNow = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _maxPrice = widget.currentFilters['maxPrice'] ?? 3000;
+    _minRating = widget.currentFilters['minRating'] ?? 0;
+    _vegOnly = widget.currentFilters['vegOnly'] ?? false;
+    _openNow = widget.currentFilters['openNow'] ?? false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF141414),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Filters',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Price Range
+                Text(
+                  'Max Price: ?${_maxPrice.toInt()}',
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                Slider(
+                  value: _maxPrice,
+                  min: 1000,
+                  max: 5000,
+                  divisions: 8,
+                  activeColor: const Color(0xFF00D4FF),
+                  inactiveColor: Colors.white.withOpacity(0.1),
+                  onChanged: (v) => setState(() => _maxPrice = v),
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Min Rating
+                Text(
+                  'Min Rating: ${_minRating.toStringAsFixed(1)}+',
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                Slider(
+                  value: _minRating,
+                  min: 0,
+                  max: 5,
+                  divisions: 10,
+                  activeColor: const Color(0xFF00D4FF),
+                  inactiveColor: Colors.white.withOpacity(0.1),
+                  onChanged: (v) => setState(() => _minRating = v),
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Toggles
+                _buildToggle('Veg Only', _vegOnly, (v) => setState(() => _vegOnly = v)),
+                _buildToggle('Open Now', _openNow, (v) => setState(() => _openNow = v)),
+                
+                const SizedBox(height: 32),
+                
+                // Apply Button
+                SizedBox(
+                  width: double.infinity,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF00D4FF), Color(0xFF2979FF)],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          widget.onApply({
+                            'maxPrice': _maxPrice,
+                            'minRating': _minRating,
+                            'vegOnly': _vegOnly,
+                            'openNow': _openNow,
+                          });
+                          Navigator.pop(context);
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Text(
+                            'Apply Filters',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggle(String label, bool value, Function(bool) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: const Color(0xFF00D4FF),
+            activeTrackColor: const Color(0xFF00D4FF).withOpacity(0.3),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+=================== lib/core/widgets/shimmer_widget.dart ===================
+import 'package:flutter/material.dart';
+
+class ShimmerWidget extends StatelessWidget {
+  final double width;
+  final double height;
+  final ShapeBorder shape;
+
+  const ShimmerWidget.rectangular({
+    super.key,
+    this.width = double.infinity,
+    required this.height,
+  }) : shape = const RoundedRectangleBorder();
+
+  const ShimmerWidget.circular({
+    super.key,
+    required this.width,
+    required this.height,
+    this.shape = const CircleBorder(),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: ShapeDecoration(
+        color: Colors.grey[800],
+        shape: shape,
+      ),
+    );
+  }
+}
+
+class ShimmerLoading extends StatefulWidget {
+  final Widget child;
+
+  const ShimmerLoading({super.key, required this.child});
+
+  @override
+  State<ShimmerLoading> createState() => _ShimmerLoadingState();
+}
+
+class _ShimmerLoadingState extends State<ShimmerLoading>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+    
+    _animation = Tween<double>(begin: -2, end: 2).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      child: widget.child,
+      builder: (context, child) {
+        return ShaderMask(
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.grey[800]!,
+                Colors.grey[700]!,
+                Colors.grey[800]!,
+              ],
+              stops: const [0.0, 0.5, 1.0],
+              transform: _SlidingGradientTransform(_animation.value),
+            ).createShader(bounds);
+          },
+          blendMode: BlendMode.srcATop,
+          child: child,
+        );
+      },
+    );
+  }
+}
+
+class _SlidingGradientTransform extends GradientTransform {
+  final double percent;
+
+  const _SlidingGradientTransform(this.percent);
+
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    return Matrix4.translationValues(bounds.width * percent, 0, 0);
+  }
+}
+
+=================== lib/core/widgets/today_menu_widget.dart ===================
+import 'package:flutter/material.dart';
+
+class TodayMenuWidget extends StatelessWidget {
+  final Map<String, dynamic> menu;
+
+  const TodayMenuWidget({super.key, required this.menu});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF00D4FF).withOpacity(0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.restaurant_menu,
+                size: 16,
+                color: const Color(0xFF00D4FF).withOpacity(0.7),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                "Today's Special",
+                style: TextStyle(
+                  color: const Color(0xFF00D4FF).withOpacity(0.9),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _buildMenuItem('Lunch', menu['lunch'] ?? 'Dal, Rice, Roti, Salad'),
+          const SizedBox(height: 4),
+          _buildMenuItem('Dinner', menu['dinner'] ?? 'Paneer, Rice, Roti, Dal'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(String meal, String items) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$meal: ',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.9),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            items,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 12,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+=================== lib/firebase_options.dart ===================
+import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
+
+class DefaultFirebaseOptions {
+  static FirebaseOptions get currentPlatform {
+    if (kIsWeb) {
+      throw UnsupportedError('Web not supported');
+    }
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return android;
+      case TargetPlatform.iOS:
+        return ios;
+      case TargetPlatform.linux:
+        return android; // Use Android config for Linux
+      case TargetPlatform.macOS:
+        return macos;
+      case TargetPlatform.windows:
+        throw UnsupportedError('Windows not supported');
+      case TargetPlatform.fuchsia:
+        throw UnsupportedError('Fuchsia not supported');
+    }
+  }
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'YOUR_API_KEY',
+    appId: 'YOUR_APP_ID',
+    messagingSenderId: 'YOUR_SENDER_ID',
+    projectId: 'YOUR_PROJECT_ID',
+    storageBucket: 'YOUR_BUCKET',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'YOUR_API_KEY',
+    appId: 'YOUR_APP_ID',
+    messagingSenderId: 'YOUR_SENDER_ID',
+    projectId: 'YOUR_PROJECT_ID',
+    storageBucket: 'YOUR_BUCKET',
+    iosClientId: 'YOUR_IOS_CLIENT_ID',
+    iosBundleId: 'YOUR_BUNDLE_ID',
+  );
+
+  static const FirebaseOptions macos = ios;
+}
+
+=================== lib/main.dart ===================
+import 'package:flutter/material.dart';
+import 'presentation/screens/auth/splash_screen.dart';
+import 'core/theme/app_theme.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'MessGo',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.darkTheme,  // <-- Yeh change kiya
+      home: const SplashScreen(),
+    );
+  }
+}
+
+=================== lib/presentation/providers/auth_provider.dart ===================
+import 'package:flutter/material.dart';
+
+// Simple Provider without Firebase for now
+class AuthProvider extends ChangeNotifier {
+  bool _isLoggedIn = false;
+  String? _userRole;
+  
+  bool get isLoggedIn => _isLoggedIn;
+  String? get userRole => _userRole;
+
+  void login(String role) {
+    _isLoggedIn = true;
+    _userRole = role;
+    notifyListeners();
+  }
+
+  void logout() {
+    _isLoggedIn = false;
+    _userRole = null;
+    notifyListeners();
+  }
+}
+
+=================== lib/presentation/screens/auth/login_screen.dart ===================
+import 'package:flutter/material.dart';
+import '../student/home_screen.dart';
+import '../owner/owner_dashboard.dart';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _usernameCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  String _selectedRole = 'student';
+  bool _isLoading = false;
+  bool _obscurePass = true;
+
+  void _login() {
+    if (_usernameCtrl.text == 'admin' && _passCtrl.text == 'admin') {
+      setState(() => _isLoading = true);
+      
+      Future.delayed(const Duration(milliseconds: 800), () {
+        setState(() => _isLoading = false);
+        
+        if (_selectedRole == 'owner') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const OwnerDashboard()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const StudentHomeScreen()),
+          );
+        }
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Invalid credentials! Use admin/admin'),
+          backgroundColor: Colors.red[400],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0A0A),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF0A0A0A),
+              const Color(0xFF0A0A0A),
+              Colors.blue.withOpacity(0.1),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFF00D4FF).withOpacity(0.3),
+                          const Color(0xFF7C4DFF).withOpacity(0.3),
+                        ],
+                      ),
+                      border: Border.all(
+                        color: const Color(0xFF00D4FF).withOpacity(0.5),
+                        width: 2,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.restaurant_menu,
+                      size: 60,
+                      color: Color(0xFF00D4FF),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  
+                  ShaderMask(
+                    shaderCallback: (bounds) => const LinearGradient(
+                      colors: [Color(0xFF00D4FF), Color(0xFF7C4DFF)],
+                    ).createShader(bounds),
+                    child: const Text(
+                      'MessGo',
+                      style: TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Find your perfect mess',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF9E9E9E),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E1E1E),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildRoleButton('Student', 'student'),
+                        ),
+                        Expanded(
+                          child: _buildRoleButton('Owner', 'owner'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  TextField(
+                    controller: _usernameCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Username',
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                      prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF9E9E9E)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFF1E1E1E),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: const Color(0xFF00D4FF).withOpacity(0.2)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFF00D4FF), width: 2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  TextField(
+                    controller: _passCtrl,
+                    obscureText: _obscurePass,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Password',
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                      prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF9E9E9E)),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePass ? Icons.visibility_off : Icons.visibility,
+                          size: 20,
+                          color: const Color(0xFF9E9E9E),
+                        ),
+                        onPressed: () => setState(() => _obscurePass = !_obscurePass),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFF1E1E1E),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: const Color(0xFF00D4FF).withOpacity(0.2)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFF00D4FF), width: 2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00D4FF).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFF00D4FF).withOpacity(0.3),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: Color(0xFF00D4FF),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Use admin / admin',
+                          style: TextStyle(
+                            color: Color(0xFF00D4FF),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _login,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00D4FF),
+                        foregroundColor: Colors.black,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                              ),
+                            )
+                          : const Text(
+                              'Login',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoleButton(String label, String value) {
+    final isSelected = _selectedRole == value;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedRole = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [Color(0xFF00D4FF), Color(0xFF2979FF)],
+                )
+              : null,
+          color: isSelected ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: isSelected ? Colors.black : const Color(0xFF9E9E9E),
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+=================== lib/presentation/screens/auth/register_screen.dart ===================
+
+=================== lib/presentation/screens/auth/splash_screen.dart ===================
+import 'package:flutter/material.dart';
+import 'login_screen.dart';
+import '../student/home_screen.dart';
+import '../owner/owner_dashboard.dart';
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Check login status after 2 seconds
+    Future.delayed(const Duration(seconds: 2), () {
+      // For now, show login screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.restaurant_menu,
+              size: 80,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'MessGo',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Find your perfect mess',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 40),
+            const CircularProgressIndicator(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+=================== lib/presentation/screens/owner/owner_dashboard.dart ===================
+import 'package:flutter/material.dart';
+import '../auth/login_screen.dart';
+
+class OwnerDashboard extends StatelessWidget {
+  const OwnerDashboard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Owner Dashboard'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+            ),
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildStatCard('Active Subscribers', '25', Icons.people),
+            const SizedBox(height: 16),
+            _buildStatCard('Today\'s Meals', '45', Icons.restaurant),
+            const SizedBox(height: 16),
+            _buildStatCard('Monthly Revenue', '?62,500', Icons.currency_rupee),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.qr_code_scanner),
+                label: const Text('Scan QR Code'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.deepPurple.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: Colors.deepPurple),
+            ),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+=================== lib/presentation/screens/student/home_screen.dart ===================
+import 'package:flutter/material.dart';
+import 'mess_detail_screen.dart';
+import 'package:messgo/core/widgets/shimmer_widget.dart';
+import 'package:messgo/core/services/bookmark_service.dart';
+import 'package:messgo/core/widgets/filter_bottom_sheet.dart';
+import 'package:messgo/core/widgets/today_menu_widget.dart';
+
+class StudentHomeScreen extends StatefulWidget {
+  const StudentHomeScreen({super.key});
+
+  @override
+  State<StudentHomeScreen> createState() => _StudentHomeScreenState();
+}
+
+class _StudentHomeScreenState extends State<StudentHomeScreen> {
+  int _selectedIndex = 0;
+  bool _isLoading = true;
+  Set<String> _bookmarkedIds = {};
+  String _searchQuery = '';
+  String _selectedCategory = 'All';
+  
+  Map<String, dynamic> _filters = {
+    'maxPrice': 5000.0,
+    'minRating': 0.0,
+    'vegOnly': false,
+    'openNow': false,
+  };
+
+  final List<Map<String, dynamic>> messes = [
+    {
+      'id': '1',
+      'name': 'Sharma Ji Ki Rasoi',
+      'rating': 4.8,
+      'reviews': 128,
+      'price': 2500,
+      'type': 'Pure Veg',
+      'distance': '0.5 km',
+      'address': 'Block A, Near College Gate',
+      'features': ['AC', 'WiFi', 'Parking'],
+      'timing': '7:00 AM - 10:00 PM',
+      'menu': {
+        'lunch': 'Dal Makhani, Rice, Roti, Salad, Papad',
+        'dinner': 'Shahi Paneer, Rice, Roti, Dal, Sweet',
+      },
+    },
+    {
+      'id': '2',
+      'name': 'Bhaijaan Dhaba',
+      'rating': 4.5,
+      'reviews': 89,
+      'price': 2200,
+      'type': 'Non-Veg',
+      'distance': '0.8 km',
+      'address': 'Main Road, Opposite Hostel',
+      'features': ['Non-AC', 'Home Delivery'],
+      'timing': '8:00 AM - 11:00 PM',
+      'menu': {
+        'lunch': 'Chicken Curry, Rice, Roti, Salad',
+        'dinner': 'Mutton Biryani, Raita, Salad',
+      },
+    },
+    {
+      'id': '3',
+      'name': 'Apna Kitchen',
+      'rating': 4.7,
+      'reviews': 256,
+      'price': 2800,
+      'type': 'Both',
+      'distance': '1.2 km',
+      'address': 'Sector 4, PG Complex',
+      'features': ['AC', 'WiFi', 'GYM', 'Parking'],
+      'timing': '6:30 AM - 10:30 PM',
+      'menu': {
+        'lunch': 'Mix Veg, Dal Tadka, Rice, Roti, Salad',
+        'dinner': 'Butter Chicken, Veg Pulao, Roti, Dal',
+      },
+    },
+    {
+      'id': '4',
+      'name': 'Tiffin Box',
+      'rating': 4.3,
+      'reviews': 67,
+      'price': 2000,
+      'type': 'Pure Veg',
+      'distance': '0.3 km',
+      'address': 'Lane 3, Student Hub',
+      'features': ['Budget', 'Quick Service'],
+      'timing': '7:00 AM - 9:00 PM',
+      'menu': {
+        'lunch': 'Rajma Chawal, Roti, Salad',
+        'dinner': 'Aloo Matar, Rice, Roti, Dal',
+      },
+    },
+  ];
+
+  List<Map<String, dynamic>> get _filteredMesses {
+    return messes.where((mess) {
+      // Search filter
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        final nameMatch = mess['name'].toString().toLowerCase().contains(query);
+        final typeMatch = mess['type'].toString().toLowerCase().contains(query);
+        if (!nameMatch && !typeMatch) return false;
+      }
+      
+      // Category filter
+      if (_selectedCategory != 'All') {
+        if (_selectedCategory == 'Veg' && mess['type'] != 'Pure Veg') return false;
+        if (_selectedCategory == 'Non-Veg' && mess['type'] == 'Pure Veg') return false;
+        if (_selectedCategory == 'Premium' && mess['price'] < 2500) return false;
+        if (_selectedCategory == 'Budget' && mess['price'] > 2500) return false;
+      }
+      
+      // Advanced filters
+      if (mess['price'] > _filters['maxPrice']) return false;
+      if (mess['rating'] < _filters['minRating']) return false;
+      if (_filters['vegOnly'] == true && mess['type'] != 'Pure Veg') return false;
+      
+      return true;
+    }).toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBookmarks();
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _isLoading = false);
+    });
+  }
+
+  Future<void> _loadBookmarks() async {
+    final bookmarks = await BookmarkService.getBookmarks();
+    if (mounted) setState(() => _bookmarkedIds = bookmarks.toSet());
+  }
+
+  Future<void> _toggleBookmark(String messId) async {
+    await BookmarkService.toggleBookmark(messId);
+    await _loadBookmarks();
+  }
+
+  void _showFilters() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => FilterBottomSheet(
+        currentFilters: _filters,
+        onApply: (filters) => setState(() => _filters = filters),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final displayMesses = _selectedIndex == 1 
+        ? messes.where((m) => _bookmarkedIds.contains(m['id'])).toList()
+        : _filteredMesses;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0A0A),
+      body: SafeArea(
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E1E1E),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: const Color(0xFF00D4FF).withOpacity(0.2),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on,
+                                color: Color(0xFF00D4FF),
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Near College Gate',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.keyboard_arrow_down,
+                                color: Colors.white.withOpacity(0.7),
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E1E1E),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: const Color(0xFF00D4FF).withOpacity(0.2),
+                            ),
+                          ),
+                          child: Stack(
+                            children: [
+                              const Icon(
+                                Icons.notifications_outlined,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF00D4FF),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    Text(
+                      _selectedIndex == 1 ? 'Saved Messes' : 'Find Your Perfect',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 28,
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                    if (_selectedIndex != 1)
+                      const Text(
+                        'Mess Today',
+                        style: TextStyle(
+                          color: Color(0xFF00D4FF),
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    const SizedBox(height: 20),
+                    
+                    // Search Bar with Filter
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E1E1E),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xFF00D4FF).withOpacity(0.1),
+                        ),
+                      ),
+                      child: TextField(
+                        onChanged: (v) => setState(() => _searchQuery = v),
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Search by name, food, location...',
+                          hintStyle: TextStyle(
+                            color: Colors.white.withOpacity(0.4),
+                            fontSize: 15,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Color(0xFF9E9E9E),
+                          ),
+                          suffixIcon: GestureDetector(
+                            onTap: _showFilters,
+                            child: Container(
+                              margin: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF00D4FF).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.tune,
+                                color: Color(0xFF00D4FF),
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Categories (only show on home, not saved)
+            if (_selectedIndex != 1)
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 110,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    physics: const BouncingScrollPhysics(),
+                    children: [
+                      _buildCategory('All', Icons.restaurant_menu, _selectedCategory == 'All'),
+                      _buildCategory('Veg', Icons.eco, _selectedCategory == 'Veg'),
+                      _buildCategory('Non-Veg', Icons.egg_alt, _selectedCategory == 'Non-Veg'),
+                      _buildCategory('Premium', Icons.star, _selectedCategory == 'Premium'),
+                      _buildCategory('Budget', Icons.wallet, _selectedCategory == 'Budget'),
+                      _buildCategory('Nearby', Icons.near_me, _selectedCategory == 'Nearby'),
+                    ],
+                  ),
+                ),
+              ),
+            
+            // Section Title
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF00D4FF),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          _selectedIndex == 1 ? 'Your Bookmarks' : 'Nearby Messes',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_filters['maxPrice'] < 5000 || _filters['minRating'] > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF00D4FF).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'Filtered',
+                          style: TextStyle(
+                            color: Color(0xFF00D4FF),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Mess Cards
+            _isLoading
+                ? SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => _buildShimmerCard(),
+                        childCount: 3,
+                      ),
+                    ),
+                  )
+                : displayMesses.isEmpty
+                    ? SliverToBoxAdapter(
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(40),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.search_off,
+                                  size: 60,
+                                  color: Colors.white.withOpacity(0.3),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No messes found',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.5),
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                    : SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final mess = displayMesses[index];
+                              return _buildMessCard(mess);
+                            },
+                            childCount: displayMesses.length,
+                          ),
+                        ),
+                      ),
+            
+            const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+          ],
+        ),
+      ),
+      
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF141414),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: const Color(0xFF00D4FF).withOpacity(0.1),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF00D4FF).withOpacity(0.1),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: (i) => setState(() => _selectedIndex = i),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            type: BottomNavigationBarType.fixed,
+            selectedItemColor: const Color(0xFF00D4FF),
+            unselectedItemColor: const Color(0xFF9E9E9E),
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
+            items: [
+              _buildNavItem(Icons.home_rounded, 0),
+              _buildNavItem(Icons.bookmark_rounded, 1),
+              _buildNavItem(Icons.qr_code_scanner_rounded, 2),
+              _buildNavItem(Icons.person_rounded, 3),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  BottomNavigationBarItem _buildNavItem(IconData icon, int index) {
+    final isSelected = _selectedIndex == index;
+    return BottomNavigationBarItem(
+      icon: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: isSelected
+            ? BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF00D4FF), Color(0xFF2979FF)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF00D4FF).withOpacity(0.4),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              )
+            : null,
+        child: Icon(
+          icon,
+          color: isSelected ? Colors.black : const Color(0xFF9E9E9E),
+        ),
+      ),
+      label: '',
+    );
+  }
+
+  Widget _buildShimmerCard() {
+    return ShimmerLoading(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        height: 320,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategory(String label, IconData icon, bool isSelected) {
+    return GestureDetector(
+      onTap: () => setState(() => _selectedCategory = label),
+      child: Container(
+        margin: const EdgeInsets.only(right: 12),
+        child: Column(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: isSelected
+                    ? const LinearGradient(
+                        colors: [Color(0xFF00D4FF), Color(0xFF2979FF)],
+                      )
+                    : null,
+                color: isSelected ? null : const Color(0xFF1E1E1E),
+                borderRadius: BorderRadius.circular(20),
+                border: isSelected
+                    ? null
+                    : Border.all(
+                        color: const Color(0xFF00D4FF).withOpacity(0.1),
+                      ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF00D4FF).withOpacity(0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Icon(
+                icon,
+                color: isSelected ? Colors.black : const Color(0xFF9E9E9E),
+                size: 26,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? const Color(0xFF00D4FF) : const Color(0xFF9E9E9E),
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMessCard(Map<String, dynamic> mess) {
+    final isBookmarked = _bookmarkedIds.contains(mess['id']);
+    
+    return Hero(
+      tag: 'mess-${mess['id']}',
+      child: GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) {
+              return MessDetailScreen(mess: mess);
+            },
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              var begin = const Offset(1.0, 0.0);
+              var end = Offset.zero;
+              var curve = Curves.easeInOutCubic;
+              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+              return SlideTransition(
+                position: animation.drive(tween),
+                child: child,
+              );
+            },
+          ),
+        ),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF141414),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: const Color(0xFF00D4FF).withOpacity(0.1),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF00D4FF).withOpacity(0.05),
+                blurRadius: 30,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+                child: Container(
+                  height: 180,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFF1E1E1E),
+                        const Color(0xFF0A0A0A),
+                      ],
+                    ),
+                  ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Center(
+                        child: Icon(
+                          Icons.restaurant,
+                          size: 60,
+                          color: const Color(0xFF00D4FF).withOpacity(0.2),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          height: 80,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                const Color(0xFF141414),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Type badge
+                      Positioned(
+                        top: 16,
+                        left: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: mess['type'] == 'Pure Veg'
+                                ? Colors.green.withOpacity(0.9)
+                                : mess['type'] == 'Non-Veg'
+                                    ? Colors.red.withOpacity(0.9)
+                                    : const Color(0xFF7C4DFF).withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            mess['type'],
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Bookmark button
+                      Positioned(
+                        top: 16,
+                        right: 56,
+                        child: GestureDetector(
+                          onTap: () => _toggleBookmark(mess['id']),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isBookmarked
+                                    ? const Color(0xFF00D4FF)
+                                    : Colors.white.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Icon(
+                              isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                              size: 20,
+                              color: isBookmarked ? const Color(0xFF00D4FF) : Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Rating badge
+                      Positioned(
+                        top: 16,
+                        right: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: const Color(0xFF00D4FF).withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.star,
+                                size: 16,
+                                color: Color(0xFF00D4FF),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${mess['rating']}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      mess['name'],
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 16,
+                          color: Colors.white.withOpacity(0.5),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          mess['distance'],
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Icon(
+                          Icons.people_outline,
+                          size: 16,
+                          color: Colors.white.withOpacity(0.5),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${mess['reviews']} reviews',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // Today's Menu Widget
+                    TodayMenuWidget(menu: mess['menu'] ?? {}),
+                    const SizedBox(height: 12),
+                    
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: (mess['features'] as List<String>).map((feature) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E1E1E),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFF00D4FF).withOpacity(0.1),
+                            ),
+                          ),
+                          child: Text(
+                            feature,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 12,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '?${mess['price']}',
+                              style: const TextStyle(
+                                color: Color(0xFF00D4FF),
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'per month',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.4),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF00D4FF), Color(0xFF2979FF)],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF00D4FF).withOpacity(0.4),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {},
+                              borderRadius: BorderRadius.circular(16),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 14,
+                                ),
+                                child: Text(
+                                  'View Details',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+=================== lib/presentation/screens/student/mess_detail_screen.dart ===================
+import 'package:flutter/material.dart';
+
+class MessDetailScreen extends StatelessWidget {
+  final Map<String, dynamic> mess;
+
+  const MessDetailScreen({super.key, required this.mess});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0A0A),
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          // Hero Image App Bar
+          SliverAppBar(
+            expandedHeight: 350,
+            pinned: true,
+            stretch: true,
+            backgroundColor: const Color(0xFF0A0A0A),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Hero(
+                tag: 'mess-${mess['id']}',
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFF1E1E1E),
+                        const Color(0xFF0A0A0A),
+                      ],
+                    ),
+                  ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Center(
+                        child: Icon(
+                          Icons.restaurant,
+                          size: 100,
+                          color: const Color(0xFF00D4FF).withOpacity(0.2),
+                        ),
+                      ),
+                      // Gradient overlay
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          height: 150,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                const Color(0xFF0A0A0A),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            leading: Container(
+              margin: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            actions: [
+              Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.favorite_border, color: Colors.white),
+                  onPressed: () {},
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.share, color: Colors.white),
+                  onPressed: () {},
+                ),
+              ),
+            ],
+          ),
+          
+          // Content
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Name and Rating
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          mess['name'],
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF00D4FF).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: const Color(0xFF00D4FF).withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              color: Color(0xFF00D4FF),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${mess['rating']}',
+                              style: const TextStyle(
+                                color: Color(0xFF00D4FF),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  
+                  // Address
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        color: Colors.white.withOpacity(0.5),
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          mess['address'],
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Quick Info Cards
+                  Row(
+                    children: [
+                      _buildInfoCard(Icons.schedule, mess['timing'], 'Timing'),
+                      const SizedBox(width: 12),
+                      _buildInfoCard(Icons.location_pin, mess['distance'], 'Distance'),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Price Section
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFF00D4FF).withOpacity(0.1),
+                          const Color(0xFF7C4DFF).withOpacity(0.1),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color(0xFF00D4FF).withOpacity(0.2),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Monthly Subscription',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '?${mess['price']}',
+                              style: const TextStyle(
+                                color: Color(0xFF00D4FF),
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'per month',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.5),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF00D4FF), Color(0xFF2979FF)],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Text(
+                            'Subscribe',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Features
+                  const Text(
+                    'Features',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: (mess['features'] as List<String>).map((feature) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E1E1E),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFF00D4FF).withOpacity(0.2),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              size: 18,
+                              color: const Color(0xFF00D4FF).withOpacity(0.8),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              feature,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Today's Menu
+                  const Text(
+                    'Today\'s Menu',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildMenuItem('Breakfast', 'Poha, Tea, Bread, Butter', '7:00 - 9:00 AM'),
+                  _buildMenuItem('Lunch', 'Dal, Rice, Roti, Sabzi, Salad', '12:00 - 2:00 PM'),
+                  _buildMenuItem('Dinner', 'Paneer Curry, Rice, Roti, Dal, Sweet', '7:00 - 9:00 PM'),
+                  const SizedBox(height: 100),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      
+      // Bottom Action Bar
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF141414),
+          border: Border(
+            top: BorderSide(
+              color: const Color(0xFF00D4FF).withOpacity(0.1),
+            ),
+          ),
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF00D4FF),
+                    side: const BorderSide(color: Color(0xFF00D4FF)),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text(
+                    'Book Trial',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                flex: 2,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF00D4FF), Color(0xFF2979FF)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF00D4FF).withOpacity(0.4),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {},
+                      borderRadius: BorderRadius.circular(16),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Text(
+                          'Subscribe Now',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(IconData icon, String value, String label) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFF00D4FF).withOpacity(0.1),
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: const Color(0xFF00D4FF),
+              size: 24,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(String meal, String items, String time) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF00D4FF).withOpacity(0.1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF00D4FF).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.restaurant_menu,
+              color: Color(0xFF00D4FF),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  meal,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  items,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            time,
+            style: TextStyle(
+              color: const Color(0xFF00D4FF).withOpacity(0.8),
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
